@@ -1,0 +1,32 @@
+.agent/
+TestWallpapers/
+
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs
+debug.log
+build_log.txt
+*.log
+
+# Runtime Config (optional, usually ignored if it contains local paths/prefs)
+config.json
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# VS Code
+.vscode/
+
+ReleaseOutput/

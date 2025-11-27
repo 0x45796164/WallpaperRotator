@@ -1,0 +1,478 @@
+<Window x:Class="WallpaperRotator.UI.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Wallpaper Rotator" Height="800" Width="1200"
+        WindowStartupLocation="CenterScreen"
+        Background="Transparent"
+        TextOptions.TextFormattingMode="Display"
+        FontFamily="Segoe UI Variable Display, Segoe UI, Arial">
+    
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="40" ResizeBorderThickness="5" GlassFrameThickness="-1" CornerRadius="0"/>
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <!-- Colors -->
+        <SolidColorBrush x:Key="WindowBackground" Color="#202020" Opacity="0.95"/>
+        <SolidColorBrush x:Key="CardBackground" Color="#2C2C2C"/>
+        <SolidColorBrush x:Key="AccentColor" Color="#60CDFF"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#DDDDDD"/>
+        <SolidColorBrush x:Key="Divider" Color="#333333"/>
+        <SolidColorBrush x:Key="HoverOverlay" Color="#FFFFFF" Opacity="0.1"/>
+
+        <!-- ComboBox Style -->
+        <ControlTemplate x:Key="ComboBoxToggleButton" TargetType="ToggleButton">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="20" />
+                </Grid.ColumnDefinitions>
+                <Border x:Name="Border" Grid.ColumnSpan="2" CornerRadius="4" Background="#333333" BorderBrush="#555555" BorderThickness="1" />
+                <Border Grid.Column="0" CornerRadius="4,0,0,4" Margin="1" Background="#333333" />
+                <Path x:Name="Arrow" Grid.Column="1" Fill="White" HorizontalAlignment="Center" VerticalAlignment="Center" Data="M0,0 L4,4 L8,0Z" />
+            </Grid>
+        </ControlTemplate>
+
+        <Style x:Key="DarkComboBox" TargetType="{x:Type ComboBox}">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#333333"/>
+            <Setter Property="BorderBrush" Value="#555555"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBox}">
+                        <Grid x:Name="MainGrid" SnapsToDevicePixels="true">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition MinWidth="{DynamicResource {x:Static SystemParameters.VerticalScrollBarWidthKey}}" Width="0"/>
+                            </Grid.ColumnDefinitions>
+                            <Popup x:Name="PART_Popup" AllowsTransparency="true" Grid.ColumnSpan="2" IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Margin="1" PopupAnimation="{DynamicResource {x:Static SystemParameters.ComboBoxPopupAnimationKey}}" Placement="Bottom">
+                                <Border x:Name="DropDownBorder" Background="#2C2C2C" BorderBrush="#555555" BorderThickness="1" MaxHeight="{TemplateBinding MaxDropDownHeight}" MinWidth="{Binding ActualWidth, ElementName=MainGrid}">
+                                    <ScrollViewer x:Name="DropDownScrollViewer">
+                                        <Grid x:Name="grid" RenderOptions.ClearTypeHint="Enabled">
+                                            <Canvas x:Name="canvas" HorizontalAlignment="Left" Height="0" VerticalAlignment="Top" Width="0">
+                                                <Rectangle x:Name="opaqueRect" Fill="{Binding Background, ElementName=DropDownBorder}" Height="{Binding ActualHeight, ElementName=DropDownBorder}" Width="{Binding ActualWidth, ElementName=DropDownBorder}"/>
+                                            </Canvas>
+                                            <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                        </Grid>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                            <ToggleButton x:Name="ToggleButton" BorderBrush="{TemplateBinding BorderBrush}" Background="{TemplateBinding Background}" Grid.ColumnSpan="2" Template="{StaticResource ComboBoxToggleButton}" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            <ContentPresenter x:Name="ContentPresenter" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" Content="{TemplateBinding SelectionBoxItem}" ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" IsHitTestVisible="false" Margin="{TemplateBinding Padding}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Window Control Button Style -->
+        <Style x:Key="TitleBarButtonStyle" TargetType="Button">
+            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{StaticResource HoverOverlay}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CloseButtonStyle" TargetType="Button" BasedOn="{StaticResource TitleBarButtonStyle}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E81123"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Toggle Switch -->
+        <Style x:Key="ToggleSwitch" TargetType="CheckBox">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid Background="Transparent" Height="32">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ContentPresenter Content="{TemplateBinding Content}" VerticalAlignment="Center" TextBlock.Foreground="{StaticResource TextPrimary}" TextBlock.FontSize="14"/>
+                            <Border x:Name="Track" Grid.Column="1" Width="40" Height="20" CornerRadius="10" Background="#333333" BorderBrush="#888888" BorderThickness="1">
+                                <Ellipse x:Name="Knob" Width="12" Height="12" Fill="#CCCCCC" HorizontalAlignment="Left" Margin="3,0,0,0"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Track" Property="Background" Value="{StaticResource AccentColor}"/>
+                                <Setter TargetName="Track" Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
+                                <Setter TargetName="Knob" Property="Margin" Value="0,0,3,0"/>
+                                <Setter TargetName="Knob" Property="Fill" Value="Black"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
+    <Border Background="{StaticResource WindowBackground}" BorderBrush="#333333" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40"/> <!-- Title Bar -->
+                <RowDefinition Height="*"/>  <!-- Content -->
+            </Grid.RowDefinitions>
+
+            <!-- Custom Title Bar -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Icon & Title -->
+                <StackPanel Orientation="Horizontal" Margin="15,0,0,0" VerticalAlignment="Center">
+                    <Image x:Name="AppIcon" Width="20" Height="20" Margin="0,0,10,0" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <TextBlock Text="Wallpaper Rotator" FontSize="12" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Window Controls -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Style="{StaticResource TitleBarButtonStyle}" Click="BtnMinimize_Click">
+                        <Path Data="M0,0 L10,0" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1" Width="10" Height="1"/>
+                    </Button>
+                    <Button Style="{StaticResource TitleBarButtonStyle}" Click="BtnMaximize_Click">
+                        <Path Data="M0,0 L10,0 L10,10 L0,10 Z" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1" Width="10" Height="10"/>
+                    </Button>
+                    <Button Style="{StaticResource CloseButtonStyle}" Click="BtnClose_Click">
+                        <Path Data="M0,0 L10,10 M0,10 L10,0" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1" Width="10" Height="10"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- Main Content -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="250"/> <!-- Sidebar -->
+                    <ColumnDefinition Width="*"/>   <!-- Content -->
+                </Grid.ColumnDefinitions>
+
+                <!-- Sidebar -->
+                <Border Grid.Column="0" Background="{StaticResource CardBackground}" Margin="10,0,10,10" CornerRadius="8">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Library" Foreground="{StaticResource TextSecondary}" FontSize="12" FontWeight="SemiBold" Margin="10,10,0,10"/>
+                        
+                        <RadioButton x:Name="NavMonitors" GroupName="Nav" IsChecked="True" Checked="Nav_Checked" Height="50" Style="{StaticResource {x:Type ToggleButton}}" Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Left" Padding="10,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE7F4;" FontFamily="Segoe MDL2 Assets" FontSize="20" Margin="0,0,15,0" VerticalAlignment="Center" Foreground="{StaticResource TextPrimary}"/>
+                                <TextBlock Text="Displays" FontSize="16" VerticalAlignment="Center" Foreground="{StaticResource TextPrimary}"/>
+                            </StackPanel>
+                        </RadioButton>
+                        
+                        <TextBlock Text="Settings" Foreground="{StaticResource TextSecondary}" FontSize="14" FontWeight="SemiBold" Margin="10,20,0,10"/>
+
+                        <RadioButton x:Name="NavGlobal" GroupName="Nav" Checked="Nav_Checked" Height="50" Style="{StaticResource {x:Type ToggleButton}}" Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Left" Padding="10,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="20" Margin="0,0,15,0" VerticalAlignment="Center" Foreground="{StaticResource TextPrimary}"/>
+                                <TextBlock Text="System" FontSize="16" VerticalAlignment="Center" Foreground="{StaticResource TextPrimary}"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton x:Name="NavLogs" GroupName="Nav" Checked="Nav_Checked" Height="50" Style="{StaticResource {x:Type ToggleButton}}" Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Left" Padding="10,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE9F5;" FontFamily="Segoe MDL2 Assets" FontSize="20" Margin="0,0,15,0" VerticalAlignment="Center" Foreground="{StaticResource TextPrimary}"/>
+                                <TextBlock Text="Logs" FontSize="16" VerticalAlignment="Center" Foreground="{StaticResource TextPrimary}"/>
+                            </StackPanel>
+                        </RadioButton>
+                    </StackPanel>
+                </Border>
+
+                <!-- Content Area -->
+                <Grid Grid.Column="1" Margin="10,0,20,20">
+                    
+                    <!-- Monitors View -->
+                    <Grid x:Name="ViewMonitors" Visibility="Visible">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Active Displays" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,20"/>
+
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <!-- Monitor Cards (Horizontal Wrap) -->
+                                <ListBox x:Name="MonitorList" Background="Transparent" BorderThickness="0" 
+                                         SelectionChanged="MonitorList_SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Width="220" Height="140" Background="{StaticResource CardBackground}" CornerRadius="8" Margin="0,0,15,15" Padding="15">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+                                                    
+                                                    <!-- Screen Visual -->
+                                                    <Border Background="#444" CornerRadius="4" HorizontalAlignment="Center" VerticalAlignment="Center" Width="80" Height="50">
+                                                        <TextBlock Text="{Binding MonitorId}" Foreground="#DDDDDD" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12"/>
+                                                    </Border>
+
+                                                    <StackPanel Grid.Row="1">
+                                                        <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="16" TextTrimming="CharacterEllipsis"/>
+                                                        <TextBlock Text="{Binding ResolutionDescription}" FontSize="13" Foreground="{StaticResource TextSecondary}"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <Border x:Name="Bd" Background="Transparent" CornerRadius="8" Padding="2">
+                                                            <ContentPresenter/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                                                                <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                </ListBox>
+
+                                <!-- Selected Monitor Settings -->
+                                <StackPanel x:Name="MonitorDetailsPanel" Visibility="Collapsed" Margin="0,20,0,0">
+                                    <TextBlock Text="Customization" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,15"/>
+                                    
+                                    <Border Background="{StaticResource CardBackground}" CornerRadius="8" Padding="20">
+                                        <StackPanel>
+                                            <Grid Margin="0,0,0,20">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Button Content="Rotate Now" Click="BtnRotateNow_Click" Margin="0,0,10,0" Padding="15,8" Background="#444" Foreground="White" BorderThickness="0"/>
+                                                    <Button Content="Open Folder" Click="BtnOpenFolder_Click" Margin="0,0,10,0" Padding="15,8" Background="#444" Foreground="White" BorderThickness="0"/>
+                                                    <Button Content="Set Current" Click="BtnSetCurrent_Click" Margin="0,0,10,0" Padding="15,8" Background="#444" Foreground="White" BorderThickness="0" ToolTip="Choose the starting wallpaper"/>
+                                                    <Button Content="Locate File" Click="BtnLocateCurrent_Click" Padding="15,8" Background="#444" Foreground="White" BorderThickness="0" ToolTip="Show current wallpaper in Explorer"/>
+                                                </StackPanel>
+                                                <Button Grid.Column="1" Content="Save Changes" Click="BtnSaveMonitor_Click" Padding="20,8" Background="{StaticResource AccentColor}" Foreground="Black" FontWeight="Bold" BorderThickness="0"/>
+                                            </Grid>
+
+                                            <CheckBox x:Name="ChkEnabled" Content="Enable display" Style="{StaticResource ToggleSwitch}" Margin="0,0,0,10"/>
+                                            <CheckBox x:Name="ChkAudio" Content="Enable Audio" Style="{StaticResource ToggleSwitch}" Margin="0,0,0,20"/>
+
+                                            <TextBlock Text="Playlist Folder" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,5"/>
+                                            <Grid Margin="0,0,0,15">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox x:Name="TxtPlaylist" Padding="8" Background="#222" Foreground="White" BorderThickness="0"/>
+                                                <Button Grid.Column="1" Content="..." Click="BtnBrowse_Click" Background="#333" Foreground="White" BorderThickness="0"/>
+                                            </Grid>
+
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="20"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="Rotation Interval" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,5"/>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="5"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="5"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        
+                                                        <!-- Hours -->
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="Hours" FontSize="10" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center" Margin="0,0,0,3"/>
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock x:Name="TxtHours" Text="0" FontSize="16" Foreground="White" Background="#222" Padding="8" HorizontalAlignment="Stretch" TextAlignment="Center" VerticalAlignment="Center"/>
+                                                                <StackPanel Grid.Column="1" Margin="2,0,0,0">
+                                                                    <Button Content="▲" Click="BtnHoursUp_Click" Padding="8,2" Background="#333" Foreground="White" BorderThickness="0" FontSize="8" Margin="0,0,0,2"/>
+                                                                    <Button Content="▼" Click="BtnHoursDown_Click" Padding="8,2" Background="#333" Foreground="White" BorderThickness="0" FontSize="8"/>
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </StackPanel>
+                                                        
+                                                        <!-- Minutes -->
+                                                        <StackPanel Grid.Column="2">
+                                                            <TextBlock Text="Minutes" FontSize="10" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center" Margin="0,0,0,3"/>
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock x:Name="TxtMinutes" Text="0" FontSize="16" Foreground="White" Background="#222" Padding="8" HorizontalAlignment="Stretch" TextAlignment="Center" VerticalAlignment="Center"/>
+                                                                <StackPanel Grid.Column="1" Margin="2,0,0,0">
+                                                                    <Button Content="▲" Click="BtnMinutesUp_Click" Padding="8,2" Background="#333" Foreground="White" BorderThickness="0" FontSize="8" Margin="0,0,0,2"/>
+                                                                    <Button Content="▼" Click="BtnMinutesDown_Click" Padding="8,2" Background="#333" Foreground="White" BorderThickness="0" FontSize="8"/>
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </StackPanel>
+                                                        
+                                                        <!-- Seconds -->
+                                                        <StackPanel Grid.Column="4">
+                                                            <TextBlock Text="Seconds" FontSize="10" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center" Margin="0,0,0,3"/>
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock x:Name="TxtSeconds" Text="10" FontSize="16" Foreground="White" Background="#222" Padding="8" HorizontalAlignment="Stretch" TextAlignment="Center" VerticalAlignment="Center"/>
+                                                                <StackPanel Grid.Column="1" Margin="2,0,0,0">
+                                                                    <Button Content="▲" Click="BtnSecondsUp_Click" Padding="8,2" Background="#333" Foreground="White" BorderThickness="0" FontSize="8" Margin="0,0,0,2"/>
+                                                                    <Button Content="▼" Click="BtnSecondsDown_Click" Padding="8,2" Background="#333" Foreground="White" BorderThickness="0" FontSize="8"/>
+                                                                </StackPanel>
+                                                            </Grid>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2">
+                                                    <TextBlock Text="Shuffle Mode" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,5"/>
+                                                    <ComboBox x:Name="CmbShuffleMode" Height="32" Padding="5" Style="{StaticResource DarkComboBox}" Margin="0,0,0,10">
+                                                        <ComboBoxItem Content="Random"/>
+                                                        <ComboBoxItem Content="By Name"/>
+                                                        <ComboBoxItem Content="By Date"/>
+                                                    </ComboBox>
+
+                                                    <TextBlock Text="Video Options" Foreground="{StaticResource TextSecondary}" Margin="0,10,0,5"/>
+                                                    <StackPanel Margin="0,0,0,10">
+                                                        <CheckBox x:Name="ChkRotateOnVideoEnd" Content="Rotate when video ends" Foreground="White" Margin="0,0,0,5">
+                                                            <CheckBox.LayoutTransform>
+                                                                <ScaleTransform ScaleX="1.1" ScaleY="1.1"/>
+                                                            </CheckBox.LayoutTransform>
+                                                        </CheckBox>
+                                                        <CheckBox x:Name="ChkBypassInterval" Content="Allow long video to finish" Foreground="White" ToolTip="If video is longer than rotation interval, wait for it to finish.">
+                                                            <CheckBox.LayoutTransform>
+                                                                <ScaleTransform ScaleX="1.1" ScaleY="1.1"/>
+                                                            </CheckBox.LayoutTransform>
+                                                        </CheckBox>
+                                                    </StackPanel>
+
+                                                    <TextBlock Text="Wallpaper Style" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,5"/>
+                                                    <ComboBox x:Name="CmbStyle" Height="32" Padding="5" Style="{StaticResource DarkComboBox}">
+                                                        <ComboBoxItem Content="Fill"/>
+                                                        <ComboBoxItem Content="Fit"/>
+                                                        <ComboBoxItem Content="Stretch"/>
+                                                        <ComboBoxItem Content="Center"/>
+                                                        <ComboBoxItem Content="Cover"/>
+                                                    </ComboBox>
+                                                </StackPanel>
+                                            </Grid>
+                                            
+                                            <TextBlock Text="Background Color" Foreground="{StaticResource TextSecondary}" Margin="0,15,0,5"/>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="40"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Button x:Name="BtnColorPicker" Click="BtnColorPicker_Click" BorderThickness="1" BorderBrush="#555"/>
+                                                <TextBox x:Name="TxtColor" Focusable="True" KeyboardNavigation.IsTabStop="True" Grid.Column="1" Margin="10,0,0,0" Padding="8" Background="#222" Foreground="White" BorderThickness="0"/>
+                                            </Grid>
+
+                                            <TextBlock Text="Recent Wallpapers" Foreground="{StaticResource TextSecondary}" Margin="0,20,0,5"/>
+                                            <ListBox x:Name="ListHistory" Height="120" Background="#222" BorderThickness="0" Foreground="White" SelectionChanged="ListHistory_SelectionChanged">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding}" Padding="5"/>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- Global View -->
+                    <StackPanel x:Name="ViewGlobal" Visibility="Collapsed">
+                        <TextBlock Text="System Settings" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,20"/>
+                        
+                        <Border Background="{StaticResource CardBackground}" CornerRadius="8" Padding="20">
+                            <StackPanel>
+                                <CheckBox x:Name="ChkStartWindows" Content="Start with Windows" Style="{StaticResource ToggleSwitch}" Margin="0,0,0,15"/>
+                                <CheckBox x:Name="ChkGlobalAudio" Content="Global Audio" Style="{StaticResource ToggleSwitch}" Margin="0,0,0,15"/>
+                                <CheckBox x:Name="ChkMinimizeTray" Content="Minimize to Tray" Style="{StaticResource ToggleSwitch}" Margin="0,0,0,15"/>
+                                <CheckBox x:Name="ChkDebugLog" Content="Enable Debug Logging" Style="{StaticResource ToggleSwitch}" Margin="0,0,0,20"/>
+                                
+                                <TextBlock Text="Display Mode" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,5"/>
+                                <ComboBox x:Name="CmbDisplayMode" Height="32" Padding="5" Margin="0,0,0,20" Style="{StaticResource DarkComboBox}">
+                                    <ComboBoxItem Content="Wallpaper per display"/>
+                                    <ComboBoxItem Content="Stretch single wallpaper"/>
+                                    <ComboBoxItem Content="Clone single wallpaper"/>
+                                </ComboBox>
+                                
+                                <Button Content="Save System Settings" Click="BtnSaveGlobal_Click" HorizontalAlignment="Left" Padding="20,8" Background="{StaticResource AccentColor}" Foreground="Black" FontWeight="Bold" BorderThickness="0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Logs View -->
+                    <Grid x:Name="ViewLogs" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                            <TextBlock Text="Application Logs" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                            <Button Content="Refresh" Click="BtnRefreshLogs_Click" Margin="20,0,10,0" Padding="10,5" Background="#444" Foreground="White" BorderThickness="0"/>
+                            <Button Content="Open File" Click="BtnOpenLogFile_Click" Padding="10,5" Background="#444" Foreground="White" BorderThickness="0"/>
+                        </StackPanel>
+
+                        <Border Grid.Row="1" Background="{StaticResource CardBackground}" CornerRadius="8" Padding="10">
+                            <TextBox x:Name="TxtLogs" IsReadOnly="True" VerticalScrollBarVisibility="Auto" 
+                                     FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" 
+                                     Background="Transparent" BorderThickness="0" Foreground="#DDD"/>
+                        </Border>
+                    </Grid>
+
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
