@@ -1,7 +1,25 @@
-# Build Script for Wallpaper Rotator V1.0
+# Build Script for Wallpaper Rotator
+# Reads version from .csproj
 
 $ErrorActionPreference = "Stop"
-$version = "1.0.0"
+
+# Read version from csproj
+$csprojPath = "WallpaperRotator.csproj"
+if (-not (Test-Path $csprojPath)) {
+    Write-Error "Could not find $csprojPath"
+    exit 1
+}
+
+[xml]$csproj = Get-Content $csprojPath
+$version = $csproj.Project.PropertyGroup.Version
+
+if ([string]::IsNullOrWhiteSpace($version)) {
+    Write-Error "Could not find Version in $csprojPath"
+    exit 1
+}
+
+Write-Host "Detected Version: $version" -ForegroundColor Green
+
 $publishDir = "bin\Release\net7.0-windows\win-x64\publish"
 $outputDir = "ReleaseOutput"
 $isccPath = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
@@ -71,7 +89,8 @@ Write-Host "`nChecking for Inno Setup Compiler..." -ForegroundColor Cyan
 
 if (Test-Path $isccPath) {
     Write-Host "Compiling Installer..." -ForegroundColor Cyan
-    & $isccPath "installer.iss"
+    # Pass version to ISCC
+    & $isccPath "installer.iss" "/DMyAppVersion=$version"
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Installer created successfully!" -ForegroundColor Green
         Write-Host "Installer Location: $outputDir\WallpaperRotator-Setup-v$version.exe" -ForegroundColor Green

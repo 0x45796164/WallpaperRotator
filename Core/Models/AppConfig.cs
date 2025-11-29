@@ -10,10 +10,13 @@ public class AppConfig
 
 public class GlobalSettings
 {
-    public bool StartWithWindows { get; set; } = true;
+    public bool StartWithWindows { get; set; } = false;
     public bool MinimizeToTray { get; set; } = true;
     public bool DebugLogging { get; set; } = false;
     public bool GlobalAudioEnabled { get; set; } = true;
+    public bool EnableDoubleClickRotate { get; set; } = true;
+    public bool EnableHoverActions { get; set; } = true;
+    public bool DeleteWithoutConfirmation { get; set; } = false;
     public DisplayMode DisplayMode { get; set; } = DisplayMode.PerDisplay;
 }
 

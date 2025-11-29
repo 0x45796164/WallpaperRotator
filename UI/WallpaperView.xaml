@@ -9,5 +9,19 @@
     <Grid>
         <Image x:Name="Img" Stretch="UniformToFill" />
         <MediaElement x:Name="Vid" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="UniformToFill" Visibility="Collapsed" />
+        
+        <!-- Hover Actions Overlay -->
+        <Grid x:Name="HoverOverlay" Background="Transparent" Opacity="0" IsHitTestVisible="True"
+              MouseEnter="HoverOverlay_MouseEnter" MouseLeave="HoverOverlay_MouseLeave"
+              VerticalAlignment="Bottom" Height="60">
+            <Border Background="#CC000000" CornerRadius="8,8,0,0" HorizontalAlignment="Center" VerticalAlignment="Bottom" Padding="20,10">
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="BtnPrevious" Content="Previous" Margin="5" Padding="10,5" Click="BtnPrevious_Click" Background="#444" Foreground="White" BorderThickness="0"/>
+                    <Button x:Name="BtnOpenExplorer" Content="Open in Explorer" Margin="5" Padding="10,5" Click="BtnOpenExplorer_Click" Background="#444" Foreground="White" BorderThickness="0"/>
+                    <Button x:Name="BtnOpenApp" Content="Open in App" Margin="5" Padding="10,5" Click="BtnOpenApp_Click" Background="#444" Foreground="White" BorderThickness="0"/>
+                    <Button x:Name="BtnDelete" Content="Delete" Margin="5" Padding="10,5" Click="BtnDelete_Click" Background="#AA3333" Foreground="White" BorderThickness="0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

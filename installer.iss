@@ -1,7 +1,7 @@
 ; Wallpaper Rotator Installer Script for Inno Setup
 
 #define MyAppName "Wallpaper Rotator"
-#define MyAppVersion "1.0.0"
+;#define MyAppVersion "1.0.0" ; Defined via command line
 #define MyAppPublisher "Wallpaper Rotator Project"
 #define MyAppExeName "WallpaperRotator.exe"
 #define MyAppPublishDir "ReleaseOutput\Standard"

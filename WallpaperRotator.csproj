@@ -23,6 +23,7 @@
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
     <RetainVMGarbageCollection>false</RetainVMGarbageCollection>
     <ApplicationIcon>icon-light.ico</ApplicationIcon>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

@@ -63,6 +63,9 @@ Wallpaper Rotator was built to be **lightweight, stable, and crash-resistant** u
 - **Start with Windows**: Auto-launch on system startup
 - **Low Resource Usage**: Efficient memory and CPU footprint
 - **Taskbar Preservation**: Wallpapers respect taskbar area
+- **Hover Actions**: Interactive overlay with "Previous", "Open in Explorer", "Open in App", and "Delete" actions
+- **Recycle Bin Integration**: Safe deletion of wallpapers
+- **Delete Confirmation**: Optional confirmation dialog for deletions
 
 ## Installation
 

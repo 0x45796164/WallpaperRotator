@@ -53,6 +53,32 @@ namespace WallpaperRotator.UI
             
             // Enable Mica
             this.SourceInitialized += (s, e) => EnableMica();
+            
+            AdjustWindowSize();
+        }
+
+        private void AdjustWindowSize()
+        {
+            try
+            {
+                var workArea = System.Windows.SystemParameters.WorkArea;
+                
+                // Ideal size
+                double targetWidth = 1200;
+                double targetHeight = 800;
+
+                // Constrain to 90% of screen size to ensure it fits
+                if (targetWidth > workArea.Width * 0.9) targetWidth = workArea.Width * 0.9;
+                if (targetHeight > workArea.Height * 0.9) targetHeight = workArea.Height * 0.9;
+
+                // Ensure minimums
+                this.Width = Math.Max(800, targetWidth);
+                this.Height = Math.Max(600, targetHeight);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to adjust window size: {ex.Message}");
+            }
         }
 
         // --- Window Chrome Events ---
@@ -101,6 +127,9 @@ namespace WallpaperRotator.UI
             ChkStartWindows.IsChecked = _config.GlobalSettings.StartWithWindows;
             ChkMinimizeTray.IsChecked = _config.GlobalSettings.MinimizeToTray;
             ChkDebugLog.IsChecked = _config.GlobalSettings.DebugLogging;
+            ChkDoubleClickRotate.IsChecked = _config.GlobalSettings.EnableDoubleClickRotate;
+            ChkHoverActions.IsChecked = _config.GlobalSettings.EnableHoverActions;
+            ChkDeleteNoConfirm.IsChecked = _config.GlobalSettings.DeleteWithoutConfirmation;
             CmbDisplayMode.SelectedIndex = (int)_config.GlobalSettings.DisplayMode;
 
             // Monitors
@@ -455,6 +484,9 @@ namespace WallpaperRotator.UI
                 _config.GlobalSettings.GlobalAudioEnabled = ChkGlobalAudio.IsChecked ?? true;
                 _config.GlobalSettings.MinimizeToTray = ChkMinimizeTray.IsChecked ?? true;
                 _config.GlobalSettings.DebugLogging = ChkDebugLog.IsChecked ?? false;
+                _config.GlobalSettings.EnableDoubleClickRotate = ChkDoubleClickRotate.IsChecked ?? false;
+                _config.GlobalSettings.EnableHoverActions = ChkHoverActions.IsChecked ?? false;
+                _config.GlobalSettings.DeleteWithoutConfirmation = ChkDeleteNoConfirm.IsChecked ?? false;
                 _config.GlobalSettings.DisplayMode = (DisplayMode)CmbDisplayMode.SelectedIndex;
 
                 bool startWithWindows = ChkStartWindows.IsChecked ?? false;

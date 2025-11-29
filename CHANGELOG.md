@@ -5,6 +5,14 @@ All notable changes to Wallpaper Rotator will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-11-29
+
+### Added
+- **"Previous" Wallpaper Button**: Added a button to the hover overlay to return to the previously displayed wallpaper.
+- **Delete Confirmation Toggle**: Added a setting to disable the confirmation dialog when deleting wallpapers.
+- **Recycle Bin Integration**: Deleting a wallpaper now safely moves it to the Recycle Bin instead of permanent deletion.
+- **Default Settings Update**: Optimized default settings for a better out-of-the-box experience (Global Audio, Hover Actions, etc. enabled by default).
+
 ## [1.0.0] - 2025-11-27
 
 ### Added

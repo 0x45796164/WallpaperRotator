@@ -11,6 +11,10 @@ public class WallpaperRotatorService
     private PlaylistManager _playlistManager = new();
     private RotationEngine? _rotationEngine;
     private WallpaperRotator.UI.TrayUI? _trayUI;
+    private Dictionary<string, bool> _previousEnabledStates = new();
+    public bool IsPaused { get; private set; } = false;
+
+    public IReadOnlyList<MonitorState> Monitors => _monitorManager.Monitors;
 
     public void Start()
     {
@@ -167,5 +171,50 @@ public class WallpaperRotatorService
         {
             Utilities.Logger.Error($"Failed to set StartWithWindows: {ex.Message}");
         }
+    }
+
+    public void Pause()
+    {
+        if (IsPaused) return;
+
+        IsPaused = true;
+        _previousEnabledStates.Clear();
+
+        foreach (var monitor in _monitorManager.Monitors)
+        {
+            _previousEnabledStates[monitor.MonitorId] = monitor.IsEnabled;
+            monitor.IsEnabled = false;
+        }
+
+        _rotationEngine?.ReapplySettings(true);
+        Logger.Info("Service paused (Global Disable).");
+    }
+
+    public void Resume()
+    {
+        if (!IsPaused) return;
+
+        IsPaused = false;
+
+        foreach (var monitor in _monitorManager.Monitors)
+        {
+            if (_previousEnabledStates.TryGetValue(monitor.MonitorId, out bool wasEnabled))
+            {
+                monitor.IsEnabled = wasEnabled;
+            }
+        }
+
+        _rotationEngine?.ReapplySettings(true);
+        Logger.Info("Service resumed (Global Enable).");
+    }
+
+    public void PauseMonitorRotation(string monitorId)
+    {
+        _rotationEngine?.PauseMonitor(monitorId);
+    }
+
+    public void ResumeMonitorRotation(string monitorId)
+    {
+        _rotationEngine?.ResumeMonitor(monitorId);
     }
 }

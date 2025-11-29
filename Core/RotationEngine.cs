@@ -22,6 +22,7 @@ public class RotationEngine : IDisposable
     
     // Map MonitorId -> WallpaperWindow
     private readonly Dictionary<string, WallpaperWindow> _windows = new();
+    private readonly HashSet<string> _pausedMonitors = new();
 
     public RotationEngine(MonitorManager monitorManager, PlaylistManager playlistManager)
     {
@@ -70,18 +71,17 @@ public class RotationEngine : IDisposable
             // Subscribe to VideoEnded for smart rotation
             // We use configSource to track state (LastAppliedTime, etc.)
             window.VideoEnded += (s, e) => OnVideoEnded(configSource);
+            window.RequestPause += (s, e) => PauseMonitor(configSource.MonitorId);
+            window.RequestResume += (s, e) => ResumeMonitor(configSource.MonitorId);
+            window.RequestRotate += (s, e) => RotateMonitor(configSource);
+            window.RequestPrevious += (s, e) => RotateToPrevious(configSource);
 
-            // STRATEGY: No Injection (Desktop Overlay/Underlay)
+
+
             var handle = window.GetHandle();
-            int exStyle = WindowInjector.GetWindowLong(handle, WindowInjector.GWL_EXSTYLE);
-            exStyle |= WindowInjector.WS_EX_TOOLWINDOW | WindowInjector.WS_EX_NOACTIVATE;
-            WindowInjector.SetWindowLong(handle, WindowInjector.GWL_EXSTYLE, exStyle);
-
-            WindowInjector.SetWindowPos(handle, WindowInjector.HWND_BOTTOM, 
-                bounds.X, bounds.Y, bounds.Width, bounds.Height, 
-                WindowInjector.SWP_SHOWWINDOW | WindowInjector.SWP_NOACTIVATE);
-
-            Logger.Info($"Created top-level wallpaper window for {id} and sent to bottom.");
+            
+            // STRATEGY: No Injection (Desktop Overlay/Underlay)
+            ApplyToolWindowStyle(handle, bounds);
             
             _windows[id] = window;
         }
@@ -90,6 +90,20 @@ public class RotationEngine : IDisposable
             Logger.Error($"Failed to create window for {id}: {ex.Message}");
         }
     }
+
+    private void ApplyToolWindowStyle(IntPtr handle, Rectangle bounds)
+    {
+        int exStyle = WindowInjector.GetWindowLong(handle, WindowInjector.GWL_EXSTYLE);
+        exStyle |= WindowInjector.WS_EX_TOOLWINDOW | WindowInjector.WS_EX_NOACTIVATE;
+        WindowInjector.SetWindowLong(handle, WindowInjector.GWL_EXSTYLE, exStyle);
+
+        WindowInjector.SetWindowPos(handle, WindowInjector.HWND_BOTTOM, 
+            bounds.X, bounds.Y, bounds.Width, bounds.Height, 
+            WindowInjector.SWP_SHOWWINDOW | WindowInjector.SWP_NOACTIVATE);
+
+        Logger.Info($"Created top-level wallpaper window and sent to bottom.");
+    }
+
 
     private void OnVideoEnded(MonitorState monitor)
     {
@@ -102,7 +116,7 @@ public class RotationEngine : IDisposable
         }
     }
 
-    public void RotateMonitor(MonitorState monitor, bool preserveCurrent = false)
+    public void RotateMonitor(MonitorState monitor, bool preserveCurrent = false, bool addToHistory = true)
     {
         if (monitor == null || !monitor.IsEnabled) return;
 
@@ -177,7 +191,10 @@ public class RotationEngine : IDisposable
             monitor.VideoHasFinished = false; // Reset video state
             
             // Update History
-            AddToHistory(monitor, nextWallpaper);
+            if (addToHistory)
+            {
+                AddToHistory(monitor, nextWallpaper);
+            }
         }
         catch (Exception ex)
         {
@@ -185,7 +202,26 @@ public class RotationEngine : IDisposable
         }
     }
 
-    public void SetSpecificWallpaper(MonitorState monitor, string wallpaperPath)
+    public void RotateToPrevious(MonitorState monitor)
+    {
+        if (monitor == null || monitor.WallpaperHistory == null || monitor.WallpaperHistory.Count == 0) return;
+
+        lock (_lock)
+        {
+            if (monitor.WallpaperHistory.Count < 2) return; // Need at least 2 items to go back
+            
+            // Remove current (last)
+            monitor.WallpaperHistory.RemoveAt(monitor.WallpaperHistory.Count - 1);
+            
+            // Get new last
+            string prevWallpaper = monitor.WallpaperHistory.Last();
+            
+            // Set it, but DO NOT add to history (it's already there)
+            SetSpecificWallpaper(monitor, prevWallpaper, false);
+        }
+    }
+
+    public void SetSpecificWallpaper(MonitorState monitor, string wallpaperPath, bool addToHistory = true)
     {
         if (monitor == null || string.IsNullOrEmpty(wallpaperPath)) return;
 
@@ -203,7 +239,10 @@ public class RotationEngine : IDisposable
         monitor.VideoHasFinished = false; // Reset video state
         
         // Update History
-        AddToHistory(monitor, wallpaperPath);
+        if (addToHistory)
+        {
+            AddToHistory(monitor, wallpaperPath);
+        }
 
         // Determine if video
         string ext = Path.GetExtension(wallpaperPath).ToLower();
@@ -279,6 +318,8 @@ public class RotationEngine : IDisposable
 
     private void CheckAndRotate(MonitorState monitor)
     {
+        if (_pausedMonitors.Contains(monitor.MonitorId)) return;
+
         var elapsed = DateTime.Now - monitor.LastAppliedTime;
         
         // If interval is 0 or less, do not rotate automatically
@@ -393,6 +434,22 @@ public class RotationEngine : IDisposable
         if (monitor.WallpaperHistory.Count > 5)
         {
             monitor.WallpaperHistory.RemoveAt(0);
+        }
+    }
+
+    public void PauseMonitor(string monitorId)
+    {
+        lock (_lock)
+        {
+            _pausedMonitors.Add(monitorId);
+        }
+    }
+
+    public void ResumeMonitor(string monitorId)
+    {
+        lock (_lock)
+        {
+            _pausedMonitors.Remove(monitorId);
         }
     }
 

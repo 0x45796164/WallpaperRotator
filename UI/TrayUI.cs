@@ -24,15 +24,28 @@ public class TrayUI : IDisposable
     private void InitializeComponent()
     {
         // Context Menu
+        _contextMenu.Opening += OnContextMenuOpening;
+
         var itemSettings = new ToolStripMenuItem("Settings", null, OnSettings);
-        var itemRotate = new ToolStripMenuItem("Manual Rotate (Primary)", null, OnManualRotate);
+        var itemRotateAll = new ToolStripMenuItem("Rotate All", null, OnManualRotate);
+        
+        // Per-monitor rotation submenu
+        var itemRotateMonitor = new ToolStripMenuItem("Rotate Display");
+        itemRotateMonitor.Name = "RotateMonitor"; // Tag for finding later
+
+        var itemToggleEnable = new ToolStripMenuItem("Disable All", null, OnToggleEnable);
+        itemToggleEnable.Name = "ToggleEnable";
+
         var itemRefresh = new ToolStripMenuItem("Refresh Playlists", null, OnRefreshPlaylists);
         var itemAudio = new ToolStripMenuItem("Mute/Unmute All", null, OnToggleAudio);
         var itemExit = new ToolStripMenuItem("Exit", null, OnExit);
 
         _contextMenu.Items.Add(itemSettings);
         _contextMenu.Items.Add(new ToolStripSeparator());
-        _contextMenu.Items.Add(itemRotate);
+        _contextMenu.Items.Add(itemRotateAll);
+        _contextMenu.Items.Add(itemRotateMonitor);
+        _contextMenu.Items.Add(new ToolStripSeparator());
+        _contextMenu.Items.Add(itemToggleEnable);
         _contextMenu.Items.Add(itemRefresh);
         _contextMenu.Items.Add(itemAudio);
         _contextMenu.Items.Add(new ToolStripSeparator());
@@ -56,6 +69,46 @@ public class TrayUI : IDisposable
         }
 
         Logger.Info("Tray UI initialized.");
+    }
+
+    private void OnContextMenuOpening(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        // Update Toggle Enable Text
+        if (_contextMenu.Items["ToggleEnable"] is ToolStripMenuItem itemToggle)
+        {
+            itemToggle.Text = _service.IsPaused ? "Enable All" : "Disable All";
+        }
+
+        // Update Rotate Monitor Submenu
+        if (_contextMenu.Items["RotateMonitor"] is ToolStripMenuItem itemRotateMonitor)
+        {
+            itemRotateMonitor.DropDownItems.Clear();
+            foreach (var monitor in _service.Monitors)
+            {
+                if (monitor.IsEnabled || _service.IsPaused) // Show even if paused? Maybe not.
+                {
+                    // Use a closure to capture monitor ID
+                    string id = monitor.MonitorId;
+                    var subItem = new ToolStripMenuItem(monitor.DisplayName, null, (s, args) => _service.ManualRotate(id));
+                    itemRotateMonitor.DropDownItems.Add(subItem);
+                }
+            }
+            
+            // If no monitors, disable the item
+            itemRotateMonitor.Enabled = itemRotateMonitor.DropDownItems.Count > 0;
+        }
+    }
+
+    private void OnToggleEnable(object? sender, EventArgs e)
+    {
+        if (_service.IsPaused)
+        {
+            _service.Resume();
+        }
+        else
+        {
+            _service.Pause();
+        }
     }
 
     private Icon LoadThemeAppropriateIcon()
@@ -145,7 +198,7 @@ public class TrayUI : IDisposable
         Application.Exit();
     }
 
-   public void Dispose()
+    public void Dispose()
     {
         _notifyIcon.Visible = false;
         _notifyIcon.Dispose();

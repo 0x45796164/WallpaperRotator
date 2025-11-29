@@ -46,6 +46,9 @@ public static class WindowInjector
 
     private const uint WM_SPAWN_WORKER = 0x052C;
 
+    [DllImport("user32.dll")]
+    public static extern bool InvalidateRect(IntPtr hWnd, IntPtr lpRect, bool bErase);
+
     public static IntPtr GetWallpaperTarget(out IntPtr insertAfter)
     {
         insertAfter = HWND_BOTTOM; // Default
@@ -70,72 +73,49 @@ public static class WindowInjector
         }
 
         // 2. Send message to spawn WorkerW
+        // Note: We send it to Progman, which triggers the creation of a WorkerW behind the icons.
         IntPtr result = IntPtr.Zero;
         SendMessageTimeout(progman, WM_SPAWN_WORKER, IntPtr.Zero, IntPtr.Zero, 0, 1000, out result);
         Logger.Info($"Sent WM_SPAWN_WORKER message. Result: {result}");
 
-        // 3. Inspect all WorkerW windows
+        // 3. Find the WorkerW that is BEHIND the one with icons.
+        // The Z-order is: WorkerW(Icons) -> WorkerW(Background) -> Desktop
+        // We want to attach to WorkerW(Background).
+        // FindWindowEx(0, hwnd, ...) finds the window BELOW hwnd in Z-order.
+        
         IntPtr targetWorkerW = IntPtr.Zero;
         
-        Logger.Info("Enumerating all WorkerW windows...");
         EnumWindows((hwnd, lParam) =>
         {
-            // Get class name
             System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
             GetClassName(hwnd, sb, sb.Capacity);
             
             if (sb.ToString() == "WorkerW")
             {
-                // Check children
+                // Check if this WorkerW has SHELLDLL_DefView (Icons)
                 IntPtr shellDll = FindWindowEx(hwnd, IntPtr.Zero, "SHELLDLL_DefView", null);
-                Logger.Info($"Found WorkerW: {hwnd}. Has SHELLDLL_DefView: {shellDll != IntPtr.Zero}");
                 
                 if (shellDll != IntPtr.Zero)
                 {
-                    // This is the one with icons. We want its sibling.
+                    Logger.Info($"Found WorkerW with Icons: {hwnd}");
+                    // The target is the NEXT WorkerW in Z-order
                     targetWorkerW = FindWindowEx(IntPtr.Zero, hwnd, "WorkerW", null);
-                    Logger.Info($"-> Found SHELLDLL_DefView parent. Sibling WorkerW is: {targetWorkerW}");
+                    Logger.Info($"-> Sibling WorkerW (Target): {targetWorkerW}");
+                    return false; // Stop enumerating
                 }
             }
             return true;
         }, IntPtr.Zero);
 
-        // Fallback for hidden icons:
-        if (targetWorkerW == IntPtr.Zero)
-        {
-            Logger.Warn("Could not find WorkerW with SHELLDLL_DefView (Icons might be hidden). Looking for any valid WorkerW...");
-            
-            EnumWindows((hwnd, lParam) =>
-            {
-                System.Text.StringBuilder sb = new System.Text.StringBuilder(256);
-                GetClassName(hwnd, sb, sb.Capacity);
-                
-                if (sb.ToString() == "WorkerW")
-                {
-                     if (IsWindowVisible(hwnd))
-                     {
-                         Logger.Info($"Found visible WorkerW: {hwnd}. Using as target.");
-                         targetWorkerW = hwnd;
-                         return false; // Stop
-                     }
-                }
-                return true;
-            }, IntPtr.Zero);
-        }
-
-        if (targetWorkerW == IntPtr.Zero)
-        {
-            Logger.Warn("Could not find any suitable WorkerW. Falling back to Progman (Desktop Icons might be hidden).");
-            targetWorkerW = progman;
-            insertAfter = HWND_BOTTOM;
-        }
-        else
+        if (targetWorkerW != IntPtr.Zero)
         {
             Logger.Info($"Selected WorkerW handle: {targetWorkerW}");
-            insertAfter = HWND_TOP; // On dedicated WorkerW, we can be top
+            insertAfter = HWND_TOP; // We want to be the top child of this background WorkerW
+            return targetWorkerW;
         }
 
-        return targetWorkerW;
+        Logger.Warn("Could not find suitable WorkerW. Falling back to Progman.");
+        return progman;
     }
 
     [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]

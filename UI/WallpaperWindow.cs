@@ -8,9 +8,13 @@ namespace WallpaperRotator.UI;
 
 public class WallpaperWindow : Window
 {
-    private WallpaperView _view;
+    private WallpaperView _view = null!;
     private string _monitorId;
     public event EventHandler? VideoEnded;
+    public event EventHandler? RequestPause;
+    public event EventHandler? RequestResume;
+    public event EventHandler? RequestRotate;
+    public event EventHandler? RequestPrevious;
 
     public WallpaperWindow(string monitorId, System.Drawing.Rectangle bounds)
     {
@@ -35,6 +39,10 @@ public class WallpaperWindow : Window
         if (_view != null)
         {
             _view.VideoEnded += (s, e) => VideoEnded?.Invoke(this, EventArgs.Empty);
+            _view.RequestPause += (s, e) => RequestPause?.Invoke(this, EventArgs.Empty);
+            _view.RequestResume += (s, e) => RequestResume?.Invoke(this, EventArgs.Empty);
+            _view.RequestRotate += (s, e) => RequestRotate?.Invoke(this, EventArgs.Empty);
+            _view.RequestPrevious += (s, e) => RequestPrevious?.Invoke(this, EventArgs.Empty);
         }
     }
 
